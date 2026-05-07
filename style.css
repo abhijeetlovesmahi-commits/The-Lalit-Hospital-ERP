@@ -1,0 +1,134 @@
+/* style.css */
+
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-color: #ffffff;
+    --accent-color: #00d4ff;
+    --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    /* Ek vibrant gradient background jo glass effect ko ubharega */
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background-attachment: fixed;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    color: var(--text-color);
+}
+
+/* Glass Sidebar Setup */
+#sidebar {
+    width: 280px;
+    height: calc(100vh - 40px);
+    margin: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px); /* Frosted Glass Effect */
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+#brand-name {
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent-color);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+/* 3D Menu Items */
+#menu-list {
+    list-style: none;
+}
+
+#menu-list li {
+    padding: 15px 20px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+}
+
+/* Hover par 3D Lift effect */
+#menu-list li:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--glass-border);
+    transform: translateY(-5px) scale(1.02); /* 3D Lift */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    color: var(--accent-color);
+}
+
+/* Main Content Area */
+#main-content {
+    flex-grow: 1;
+    height: calc(100vh - 40px);
+    margin: 20px 20px 20px 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 40px;
+    overflow-y: auto;
+}
+
+h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--accent-color);
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+/* Scrollbar customization for Glass look */
+#main-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+#main-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#main-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+/* Responsive for Tablet */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 80px;
+        padding: 20px 10px;
+    }
+    #brand-name {
+        font-size: 10px;
+        letter-spacing: 0;
+    }
+    #menu-list li {
+        justify-content: center;
+        font-size: 12px;
+        padding: 10px;
+    }
+}
