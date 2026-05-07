@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPI Security Master | MedCore Hospital Engine</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    
+    <script src="firebase-config.js"></script>
+    <script src="brand.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Poppins:wght@300;400;500;600&display=swap');
+
+        body { font-family: 'Poppins', sans-serif; background: #f0f8ff; }
+        
+        .medical-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-top: 5px solid #00B4D8; }
+        .form-section { background: #E0FDFC; border-left: 6px solid #00B4D8; padding: 25px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .brand-font { font-family: 'Montserrat', sans-serif; }
+        .text-med-dark { color: #002B5B; }
+        .text-med-teal { color: #00B4D8; }
+
+        .badge-old { background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge-new { background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-top: 5px; display: inline-block; }
+        
+        .med-btn { background: #002B5B; color: white; border: none; padding: 12px 28px; font-weight: 600; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 5px; }
+        .med-btn:hover { background: #00B4D8; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 180, 216, 0.4); color: white; }
+        .med-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        input { width: 100%; padding: 14px 16px; border: 1px solid #d1d1d1; border-bottom: 3px solid #00B4D8; border-radius: 6px; font-size: 15px; background: white; transition: 0.3s;}
+        input:focus { outline: none; border-bottom-color: #002B5B; box-shadow: 0 4px 10px rgba(0, 180, 216, 0.1); }
+    </style>
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<div class="main-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">
+    <div class="medical-card">
+        
+        <div id="brand-header-container" class="header text-center mb-4" style="border-bottom: 2px solid #bde0fe; padding-bottom: 15px;">
+            <p class="text-med-teal fw-bold"><i class="fas fa-spinner fa-spin"></i> Initializing Hospital Data...</p>
+        </div>
+
+        <h2 class="text-center fw-bold brand-font text-med-dark mb-4"><i class="fas fa-shield-alt text-med-teal me-2"></i> UPI SECURITY & LOGS</h2>
+
+        <div class="form-section" style="text-align: center; border-left-color: #002B5B;">
+            <p style="font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Hospital Payment Gateway UPI</p>
+            <h1 id="currentUpiDisplay" class="brand-font" style="color: #002B5B; margin: 0; font-size: 2.2rem; font-weight: 800;"><i class="fas fa-spinner fa-spin"></i></h1>
+        </div>
+
+        <div class="form-section">
+            <h3 class="brand-font text-med-dark" style="margin-top: 0; border-bottom: 2px solid #bde0fe; padding-bottom: 10px; margin-bottom: 20px; font-weight: 800;">
+                <i class="fas fa-edit text-med-teal me-2"></i> Update Gateway Address
+            </h3>
+            
+            <div class="input-group" style="margin-bottom: 20px; display: block;">
+                <label style="font-weight: 600; color: #002B5B; margin-bottom: 8px; display: block;">NEW UPI ID (VPA)</label>
+                <input type="text" id="newUpiInput" placeholder="e.g. hospitalname@bank" autocomplete="off" spellcheck="false" style="color: #002B5B; font-weight: bold;">
+                <div style="color: #555; font-weight: 500; margin-top: 8px; font-size: 0.85rem;">
+                    <i class="fas fa-info-circle text-med-teal"></i> Hospital ke sabhi billing QR codes automatically is naye UPI par update ho jayenge.
+                </div>
+            </div>
+            
+            <button class="med-btn w-100" id="btnAction" onclick="secureUpdateUPI()" style="font-size: 1.1rem;">
+                <i class="fas fa-lock me-2"></i> AUTHORIZE & UPDATE
+            </button>
+        </div>
+
+        <div class="form-section" style="border-left-color: #f1c40f; background: #fffcf0;">
+            <h3 class="brand-font text-med-dark" style="margin-top: 0; border-bottom: 2px solid #fdebd0; padding-bottom: 10px; margin-bottom: 20px; font-weight: 800;">
+                <i class="fas fa-history text-warning me-2"></i> AUDIT TRAIL (Change History)
+            </h3>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle" style="background: white; font-size: 0.9rem;">
+                    <thead style="background-color: #002B5B; color: white;">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Changed By (User)</th>
+                            <th>Gateway Details</th>
+                            <th>Log ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logBody">
+                        <tr><td colspan="4" class="text-center py-4 text-med-dark fw-bold"><i class="fas fa-spinner fa-spin me-2"></i>Loading security logs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="menu.js"></script>
+<script>
+    // Note: Updated LocalStorage Keys for Hospital Project
+    const tenantConfigStr = localStorage.getItem('hospitalFirebaseConfig');
+    const brandDataStr = localStorage.getItem('hospitalBrandData');
+    
+    if (!tenantConfigStr || !brandDataStr) window.location.href = "login.html"; 
+
+    const tenantConfig = JSON.parse(tenantConfigStr);
+    const hospitalBrand = JSON.parse(brandDataStr);
+    const appName = "Tenant_" + (hospitalBrand.hospitalCode || "default");
+
+    let tenantApp;
+    try { tenantApp = firebase.app(appName); } catch(e) { tenantApp = firebase.initializeApp(tenantConfig, appName); }
+
+    window.db = tenantApp.firestore();
+    const tenantAuth = tenantApp.auth();
+    let oldUpiVal = "Not Configured";
+
+    tenantAuth.onAuthStateChanged(user => {
+        // Changed schoolId to hospitalId
+        if (user && localStorage.getItem('hospitalId')) {
+            if(typeof initUniversalMenu === 'function') initUniversalMenu();
+            if(typeof applyBranding === 'function') applyBranding(); 
+            
+            loadCurrentStatus();
+            loadAuditLogs();
+        } else {
+            window.location.href = "login.html"; 
+        }
+    });
+
+    async function loadCurrentStatus() {
+        try {
+            const doc = await window.db.collection('settings').doc('payment_settings').get();
+            if(doc.exists && doc.data().upiID) {
+                oldUpiVal = doc.data().upiID;
+                document.getElementById('currentUpiDisplay').innerText = oldUpiVal;
+                document.getElementById('newUpiInput').value = ''; 
+            } else { document.getElementById('currentUpiDisplay').innerHTML = "<span class='text-danger'>NOT CONFIGURED</span>"; }
+        } catch (e) { document.getElementById('currentUpiDisplay').innerHTML = "<span class='text-danger'>Error Loading Data</span>"; }
+    }
+
+    async function loadAuditLogs() {
+        const logBody = document.getElementById('logBody');
+        try {
+            const snap = await window.db.collection('upi_change_logs').orderBy('timestamp', 'desc').limit(15).get();
+            let html = '';
+            
+            if(snap.empty) { logBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 fw-bold text-success"><i class="fas fa-check-circle me-2"></i>No history found. System is secure.</td></tr>'; return; }
+
+            snap.forEach(doc => {
+                const log = doc.data();
+                const d = log.timestamp ? log.timestamp.toDate() : new Date();
+                const dateStr = d.toLocaleDateString('en-GB') + " " + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                html += `<tr>
+                        <td style="font-weight: 600; color: #333;">${dateStr}</td>
+                        <td style="font-weight: 600; color: #002B5B;"><i class="fas fa-user-shield me-1 text-med-teal"></i> ${log.changedBy}</td>
+                        <td><span class="badge-old">OLD: ${log.oldUpi || 'None'}</span><br><span class="badge-new">NEW: ${log.newUpi}</span></td>
+                        <td style="color: #888; font-weight: bold; font-size: 0.75rem;">REF-${doc.id.substring(0,6).toUpperCase()}</td>
+                    </tr>`;
+            });
+            logBody.innerHTML = html;
+        } catch (e) { logBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 fw-bold text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error loading history logs.</td></tr>'; }
+    }
+
+    async function secureUpdateUPI() {
+        const newUpi = document.getElementById('newUpiInput').value.trim();
+        if(!newUpi || !newUpi.includes('@')) {
+            alert("Kripya ek valid UPI ID dalein! (jaise: hospital@sbi)");
+            document.getElementById('newUpiInput').focus();
+            return;
+        }
+        if(newUpi === oldUpiVal) return alert("Ye toh wahi UPI hai jo abhi laga hua hai!");
+        if(!confirm("⚠️ SECURITY WARNING ⚠️\n\nKYA AAP SURE HAIN?\nNaya UPI: " + newUpi + "\n\nYe action Audit History me hamesha ke liye save ho jayega.")) return;
+
+        const btn = document.getElementById('btnAction');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> UPDATING SYSTEM...';
+        btn.disabled = true;
+
+        try {
+            const user = tenantAuth.currentUser;
+            const batch = window.db.batch();
+
+            batch.set(window.db.collection('settings').doc('payment_settings'), {
+                upiID: newUpi, lastUpdated: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: user.email
+            }, { merge: true });
+
+            batch.set(window.db.collection('upi_change_logs').doc(), {
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                changedBy: user.email, oldUpi: oldUpiVal, newUpi: newUpi, action: "UPI_CHANGE"
+            });
+
+            await batch.commit();
+            alert("✅ SUCCESS: Hospital Payment Gateway Updated & Logged!");
+            
+            document.getElementById('newUpiInput').value = '';
+            loadCurrentStatus(); 
+            loadAuditLogs();
+
+        } catch (e) { alert("Update Error: " + e.message); } finally { btn.innerHTML = originalText; btn.disabled = false; }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
