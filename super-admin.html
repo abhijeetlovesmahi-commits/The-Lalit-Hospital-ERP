@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin HQ | MedCore Hospital Engine</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+    
+    <script src="firebase-config.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --med-dark: #002B5B;      /* Deep Blue */
+            --med-teal: #00B4D8;      /* Healthcare Teal */
+            --med-light: #E0FDFC;     /* Soft Cyan Background */
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --info: #3498db;
+            --warning: #f1c40f;
+            --paper-white: #ffffff;
+            --text-muted: #555555;
+            --border-color: #bde0fe;
+            --shadow-md: 0 10px 30px rgba(0,0,0,0.08);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body { background: #f0f8ff; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; color: #1a1a1a; line-height: 1.6; }
+        .main-content { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+
+        .medical-card { 
+            width: 100%; max-width: 1200px; padding: 40px 20px; background: var(--paper-white);
+            border-top: 5px solid var(--med-teal); box-shadow: var(--shadow-md); position: relative; 
+            border-radius: 12px;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 20px; }
+        h1 { font-family: 'Montserrat', sans-serif; color: var(--med-dark); margin: 0; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;}
+
+        /* Dashboard Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: white; border-left: 4px solid var(--med-teal); padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
+        .stat-card h3 { margin: 0; font-size: 24px; color: var(--med-dark); font-family: 'Montserrat', sans-serif; font-weight: 800;}
+        .stat-card p { margin: 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+        .stat-icon { font-size: 28px; color: rgba(0, 180, 216, 0.4); }
+
+        .form-section { background: var(--med-light); border-left: 6px solid var(--med-teal); padding: 30px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .med-btn { background: var(--med-dark); color: white; border: 1px solid var(--med-dark); padding: 12px 28px; font-weight: 600; cursor: pointer; transition: var(--transition); text-transform: uppercase; letter-spacing: 1.5px; border-radius: 5px; width: 100%; }
+        .med-btn:hover { background: var(--med-teal); color: white; border-color: var(--med-teal); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 180, 216, 0.4); }
+        .med-btn:disabled { background: #ccc; border-color: #999; color: #666; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        input, textarea, select { width: 100%; padding: 14px 16px; border: 1px solid #d1d1d1; border-bottom: 3px solid var(--med-teal); border-radius: 6px; font-size: 15px; background: white; transition: 0.3s;}
+        input[readonly] { background-color: #e9ecef; cursor: not-allowed; }
+        input:focus, textarea:focus, select:focus { outline: none; border-bottom-color: var(--med-dark); box-shadow: 0 4px 10px rgba(0, 180, 216, 0.1); }
+        
+        .controls-bar { display: flex; gap: 15px; margin-bottom: 20px; }
+        .search-box { flex: 1; position: relative; }
+        .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-box input { padding-left: 40px; margin-bottom: 0; }
+        
+        .profile-grid-custom { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-top: 10px; }
+        .custom-id-card { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; transition: 0.3s; }
+        .custom-id-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); border-color: var(--med-teal); }
+        .custom-id-card.suspended { border-color: var(--danger); opacity: 0.8; background: #fff5f5; }
+        
+        .id-photo { width: 60px; height: 60px; object-fit: cover; border: 2px solid var(--med-teal); border-radius: 8px; background: #f8f9fa;}
+        .status-badge { position: absolute; top: -10px; right: 15px; padding: 4px 10px; font-size: 10px; font-weight: bold; border-radius: 12px; color: white; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .status-active { background: var(--success); }
+        .status-suspended { background: var(--danger); }
+
+        .card-actions { display: flex; flex-direction: column; gap: 8px; }
+        .action-icon { background: none; border: none; font-size: 16px; cursor: pointer; transition: 0.2s; padding: 5px; border-radius: 4px; }
+        .action-icon.edit { color: var(--info); }
+        .action-icon.share { color: var(--success); } 
+        .action-icon.suspend { color: var(--warning); }
+        .action-icon.wipe { color: var(--danger); }
+        .action-icon.database { color: #6f42c1; }
+        .action-icon:hover { background: #f0f0f0; transform: scale(1.1); }
+
+        .swal2-popup { font-family: 'Poppins', sans-serif; border-radius: 12px !important; }
+        .swal2-confirm { background-color: var(--med-dark) !important; color: white !important; }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <div class="medical-card">
+        
+        <div class="header position-relative">
+            <h1><i class="fas fa-heartbeat text-danger"></i> MEDCORE HQ</h1>
+            <p style="font-weight: 600; text-transform: uppercase; color: var(--text-muted); font-size: 12px; letter-spacing: 1px;">Hospital SaaS Control Center</p>
+            
+            <button class="btn btn-sm btn-outline-info fw-bold position-absolute top-0 end-0 mt-2 me-2" onclick="openMasterSettings()">
+                <i class="fas fa-cogs"></i> Global SaaS Setup
+            </button>
+        </div>
+
+        <div id="saLoginBox" class="form-section" style="display: none; text-align: center;">
+            <i class="fas fa-user-shield fa-3x" style="color: var(--med-dark); margin-bottom: 15px;"></i>
+            <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 800; color: var(--med-dark);">SECURE ACCESS</h2>
+            <div id="phoneStep">
+                <input type="tel" id="saPhone" placeholder="+918789038252" value="+91" style="text-align: center; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; max-width: 300px; margin-left: auto; margin-right: auto;">
+                <div id="recaptcha-container" class="d-flex justify-content-center mb-3"></div>
+                <button type="button" id="sendOtpBtn" class="med-btn" style="max-width: 300px;">SEND SECURITY OTP</button>
+            </div>
+            <div id="otpStep" style="display: none;">
+                <input type="number" id="saOtp" placeholder="Enter 6-digit OTP" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; margin-bottom: 20px; max-width: 300px; margin-left: auto; margin-right: auto;">
+                <button type="button" id="verifyOtpBtn" class="med-btn" style="max-width: 300px;">VERIFY & ENTER HQ</button>
+            </div>
+        </div>
+
+        <div id="mainContent" style="display: none;">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 style="font-family: 'Montserrat', sans-serif; color: var(--med-dark); margin: 0; font-weight: 800;"><i class="fas fa-chart-pie"></i> Network Overview</h4>
+                <button onclick="logoutAdmin()" class="btn btn-sm btn-outline-danger px-3 fw-bold"><i class="fas fa-sign-out-alt"></i> SECURE LOGOUT</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div><p>Total Hospitals</p><h3 id="statTotal">0</h3></div><i class="fas fa-hospital stat-icon"></i>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--success);">
+                    <div><p>Active Clinics</p><h3 id="statActive">0</h3></div><i class="fas fa-check-circle stat-icon text-success"></i>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--danger);">
+                    <div><p>Suspended</p><h3 id="statSuspended">0</h3></div><i class="fas fa-ban stat-icon text-danger"></i>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <span id="formActionTitle" style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 800; color: var(--med-dark); margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px;">
+                    <i class="fas fa-plus-square text-success"></i> DEPLOY NEW HOSPITAL SERVER
+                </span>
+                <form id="addHospForm">
+                    <input type="hidden" id="editHospId" value="">
+                    
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label class="small fw-bold">HOSPITAL / CLINIC NAME</label>
+                            <input type="text" id="hospName" placeholder="e.g. City Care Hospital" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="small fw-bold">CLINIC CODE (e.g. CCH)</label>
+                            <input type="text" id="hospCode" placeholder="Domain prefix" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="small fw-bold">CUSTOM DOMAIN <span class="text-danger">*</span></label>
+                            <input type="text" id="hospDomain" placeholder="e.g. citycare.online" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="small fw-bold">ADMIN PASSWORD</label>
+                            <input type="text" id="hospPass" placeholder="Min 6 characters" required>
+                        </div>
+                    </div>
+
+                    <div class="input-grid mt-2">
+                        <div class="input-group">
+                            <label class="small fw-bold">SAAS PLAN</label>
+                            <select id="hospPlan" required>
+                                <option value="Annual">Annual Plan</option>
+                                <option value="Monthly">Monthly Plan</option>
+                                <option value="Service">Service Plan</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="small fw-bold">LICENSE EXPIRY</label>
+                            <input type="date" id="hospExpiry" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="small fw-bold">PHONE NUMBER</label>
+                            <input type="text" id="hospPhone" placeholder="+91 9876543210" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <label class="small fw-bold">HOSPITAL LOGO</label>
+                                <input type="file" id="hospLogo" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <label class="small fw-bold">VALID FIREBASE CONFIG (JSON)</label>
+                                <textarea id="hospFirebaseConfig" rows="3" placeholder='{"apiKey": "...", "authDomain": "..."}' required style="font-family: monospace; font-size: 12px;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-3 mt-3">
+                        <button type="submit" id="submitBtn" class="med-btn"><i class="fas fa-rocket me-2"></i>DEPLOY & AUTO-GENERATE</button>
+                        <button type="button" id="cancelEditBtn" class="btn btn-secondary fw-bold" style="display:none; border-radius: 5px;" onclick="cancelEdit()"><i class="fas fa-times me-2"></i>CANCEL</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="form-section">
+                <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 800; color: var(--med-dark); margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px;">
+                    <i class="fas fa-server text-info"></i> ACTIVE TENANTS DATABASE
+                </span>
+                
+                <div class="controls-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search by Hospital Name or Code..." onkeyup="filterHospitals()">
+                    </div>
+                    <select id="filterStatus" onchange="filterHospitals()" style="width: 200px; border-bottom: none; border: 1px solid #d1d1d1;">
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active Only</option>
+                        <option value="Suspended">Suspended Only</option>
+                    </select>
+                </div>
+
+                <div id="hospitalsList" class="profile-grid-custom"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="globalSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-info">
+            <div class="modal-header bg-dark text-info">
+                <h5 class="modal-title fw-bold"><i class="fas fa-cogs"></i> Global SaaS Settings</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="fw-bold small text-primary"><i class="fas fa-qrcode me-1"></i> Master UPI ID (For Receiving Payments)</label>
+                    <input type="text" id="masterUpiInput" class="form-control border-primary" placeholder="e.g. 9876543210@paytm">
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <label class="fw-bold small text-primary d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-tags me-1"></i> Define SaaS Plans</span>
+                        <button class="btn btn-sm btn-outline-success" onclick="addPlanRow()"><i class="fas fa-plus"></i> Add Plan</button>
+                    </label>
+                    <div class="text-muted small mb-2">Configure the duration and price clients will see on their recharge screen.</div>
+                    <div id="plansContainer" class="bg-light p-3 rounded border"></div>
+                </div>
+                <button class="btn btn-info w-100 fw-bold mt-2 text-white" onclick="saveMasterSettings()">
+                    <i class="fas fa-broadcast-tower me-2"></i>SAVE & BROADCAST TO ALL TENANTS
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="dataManageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: 2px solid var(--danger);">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-danger" style="font-family: 'Montserrat', sans-serif;">
+                    <i class="fas fa-exclamation-triangle me-2"></i> PATIENTS DATA CLEANUP
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small fw-bold mb-3">
+                    Managing data for: <span id="targetHospName" class="text-primary" style="font-family: 'Montserrat', sans-serif;"></span>
+                </p>
+                <div class="alert alert-warning py-2 mb-4" style="font-size: 0.85rem;">
+                    <i class="fas fa-info-circle me-1"></i> Data deleted from here goes to the specific hospital's Recycle Bin for 30 days.
+                </div>
+                <label class="small fw-bold text-dark mb-1">Select Patient Registration Date</label>
+                <input type="date" id="superAdminBulkDate" class="form-control border-danger shadow-none mb-3" style="padding: 10px;">
+                <button id="superAdminWipeBtn" onclick="executeSuperAdminDateWipe()" class="btn btn-danger w-100 fw-bold py-2 shadow-sm">
+                    <i class="fas fa-trash me-2"></i> MOVE TO DUSTBIN
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="billingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-success">
+            <div class="modal-header" style="background: var(--med-dark); color: white;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-file-invoice-dollar text-success me-2"></i> APPROVE RECHARGE</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-bold text-primary mb-3" id="billingHospName"></p>
+                
+                <div id="pendingUtrSection" class="alert alert-success py-2 mb-3" style="display: none;">
+                    <strong><i class="fas fa-money-check-alt me-1"></i> New Payment Received!</strong><br>
+                    <span class="small">Requested Plan: <b id="reqPlanMonths" class="text-dark"></b> Months</span><br>
+                    <span class="small">Amount Paid: <b id="reqAmount" class="text-danger fs-6"></b></span><br>
+                    <span class="small">UTR No: <b id="pendingUtrNumber" class="text-primary"></b></span>
+                </div>
+
+                <input type="hidden" id="billingHospId">
+
+                <div class="mb-3">
+                    <label class="small fw-bold text-dark">Adjust Expiry Date (Auto-Calculated)</label>
+                    <input type="date" id="billingExpiryDate" class="form-control border-success fw-bold text-success">
+                </div>
+                
+                <button id="updateBillingBtn" onclick="executePlanUpdate()" class="btn btn-success w-100 fw-bold py-2 shadow-sm">
+                    <i class="fas fa-check-circle me-2"></i> APPROVE & UNLOCK PANEL
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPER_ADMIN_PHONE = "+918789038252";
+    const IMGBB_API_KEY = "84054e1c5e021a85ff2e90390a9c43c9";
+
+    let confirmationResult;
+    let globalHospitalsData = []; 
+    let currentActiveTenantDb = null;
+    let targetHospData = null;
+    let dataManageModalInstance = null;
+    let billingModalInstance = null;
+    let globalSettingsModalInstance = null;
+    let saasPlansData = []; 
+
+    window.onload = function() {
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'normal' });
+        
+        let nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        document.getElementById('hospExpiry').valueAsDate = nextYear;
+        
+        dataManageModalInstance = new bootstrap.Modal(document.getElementById('dataManageModal'));
+        billingModalInstance = new bootstrap.Modal(document.getElementById('billingModal'));
+        globalSettingsModalInstance = new bootstrap.Modal(document.getElementById('globalSettingsModal'));
+    };
+
+    // 1. AUTHENTICATION & LOGIN
+    firebase.auth().onAuthStateChanged(user => {
+        if (user && user.phoneNumber === SUPER_ADMIN_PHONE) {
+            document.getElementById('saLoginBox').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            loadHospitals();
+            fetchMasterSettings();
+        } else {
+            document.getElementById('saLoginBox').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+        }
+    });
+
+    document.getElementById('sendOtpBtn').onclick = () => {
+        const phone = document.getElementById('saPhone').value.trim();
+        if(phone !== SUPER_ADMIN_PHONE) return Swal.fire('Error', 'Unauthorized phone number!', 'error');
+        
+        firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier).then(res => {
+            confirmationResult = res;
+            document.getElementById('phoneStep').style.display = 'none';
+            document.getElementById('otpStep').style.display = 'block';
+        }).catch(err => Swal.fire('OTP Error', err.message, 'error'));
+    };
+
+    document.getElementById('verifyOtpBtn').onclick = () => {
+        confirmationResult.confirm(document.getElementById('saOtp').value).catch(err => Swal.fire('Error', 'Invalid OTP', 'error'));
+    };
+
+    function logoutAdmin() {
+        Swal.fire({
+            title: 'Logout?', text: 'Are you sure you want to exit Super Admin HQ?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Logout'
+        }).then((result) => {
+            if (result.isConfirmed) firebase.auth().signOut();
+        });
+    }
+
+    // 2. DEPLOY NEW HOSPITAL SERVER
+    document.getElementById('addHospForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const editingId = document.getElementById('editHospId').value;
+        btn.disabled = true; btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> PROCESSING...";
+
+        try {
+            const hospName = document.getElementById('hospName').value;
+            const hospCode = document.getElementById('hospCode').value.toUpperCase();
+            const hospDomain = document.getElementById('hospDomain').value.toLowerCase().replace(/^www\./, '');
+            const hospPass = document.getElementById('hospPass').value;
+            const rawConfig = document.getElementById('hospFirebaseConfig').value;
+            const hospEmail = `admin@${hospCode.toLowerCase()}.com`;
+            const hospPhone = document.getElementById('hospPhone').value;
+            const hospPlan = document.getElementById('hospPlan').value;
+            const hospExpiry = document.getElementById('hospExpiry').value;
+
+            let configJson;
+            try { 
+                configJson = JSON.parse(rawConfig); 
+                if(!configJson.apiKey || !configJson.projectId) throw new Error("Missing required Firebase fields.");
+            } catch(e) { throw new Error("Invalid Firebase Config JSON format. Ensure keys and values are in double quotes."); }
+
+            let logoUrl = null; 
+            const logoFile = document.getElementById('hospLogo').files[0];
+            if (logoFile) {
+                try {
+                    const formData = new FormData(); formData.append("image", logoFile);
+                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+                    const data = await res.json(); if (data.success) logoUrl = data.data.url;
+                } catch(e) { console.warn("Logo upload failed"); }
+            }
+
+            if (editingId) {
+                let updateData = { hospitalName: hospName, adminPass: hospPass, phone: hospPhone, plan: hospPlan, expiryDate: hospExpiry, firebaseConfig: JSON.stringify(configJson), customDomain: hospDomain };
+                if (logoUrl) updateData.logoUrl = logoUrl;
+                await db.collection('hospitals').doc(editingId).update(updateData);
+                Swal.fire('Updated!', `Successfully Updated ${hospName}!`, 'success'); 
+                cancelEdit();
+            } else {
+                if(!logoUrl) logoUrl = "https://via.placeholder.com/150/00B4D8/FFFFFF?text=" + hospCode;
+                const hospitalId = "HOS_" + hospCode + "_" + Date.now().toString().slice(-4);
+                
+                const tenantAppName = "DeployApp_" + Date.now();
+                const tenantApp = firebase.initializeApp(configJson, tenantAppName);
+                const tenantAuth = tenantApp.auth(); const tenantDb = tenantApp.firestore();
+
+                btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> INITIALIZING DB...";
+                try { await tenantAuth.createUserWithEmailAndPassword(hospEmail, hospPass); } catch (authErr) { if (authErr.code !== 'auth/email-already-in-use') throw authErr; }
+
+                // Creating default Staff (CMO/Admin) in tenant DB
+                await tenantDb.collection('staff').doc(hospitalId + '_admin').set({
+                    staffID: "ADM_" + Date.now().toString().slice(-4), hospitalId: hospitalId, name: hospName + " Admin", designation: "Chief Medical Officer", role: "admin", photo: logoUrl, loginEmail: hospEmail, loginPass: hospPass, timestamp: Date.now()
+                });
+
+                await tenantDb.collection('settings').doc('subscription').set({
+                    planType: hospPlan, expiryDate: hospExpiry, status: 'Active', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                await tenantAuth.signOut(); await tenantApp.delete();
+
+                // Save to Super Admin DB
+                await db.collection('hospitals').doc(hospitalId).set({
+                    hospitalId, hospitalName: hospName, hospitalCode: hospCode, customDomain: hospDomain, adminEmail: hospEmail, adminPass: hospPass, logoUrl, phone: hospPhone, plan: hospPlan, expiryDate: hospExpiry, firebaseConfig: JSON.stringify(configJson), status: "Active", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                Swal.fire('Deployed!', `Hospital: ${hospName}\nDomain: ${hospDomain}`, 'success');
+                document.getElementById('addHospForm').reset();
+            }
+        } catch (err) { Swal.fire('Process Failed', err.message, 'error'); } 
+        finally { btn.disabled = false; btn.innerHTML = editingId ? "<i class='fas fa-save me-2'></i>UPDATE DATA" : "<i class='fas fa-rocket me-2'></i>DEPLOY & AUTO-GENERATE"; }
+    };
+
+    // 3. LOAD HOSPITALS & RENDER GRID
+    function loadHospitals() {
+        db.collection('hospitals').orderBy('timestamp', 'desc').onSnapshot(snap => {
+            globalHospitalsData = []; let act = 0; let sus = 0;
+            snap.forEach(doc => { const d = doc.data(); d.docId = doc.id; globalHospitalsData.push(d); d.status === 'Suspended' ? sus++ : act++; });
+            
+            document.getElementById('statTotal').innerText = globalHospitalsData.length;
+            document.getElementById('statActive').innerText = act;
+            document.getElementById('statSuspended').innerText = sus;
+            renderHospitalsGrid(globalHospitalsData);
+        });
+    }
+
+    function renderHospitalsGrid(arr) {
+        const list = document.getElementById('hospitalsList'); list.innerHTML = "";
+        if(arr.length === 0) return list.innerHTML = "<p class='text-muted'>No hospitals found matching criteria.</p>";
+
+        arr.forEach(data => {
+            const isSuspended = data.status === 'Suspended';
+            const badgeClass = isSuspended ? 'status-suspended' : 'status-active';
+            const cardClass = isSuspended ? 'suspended' : '';
+            const suspendIcon = isSuspended ? 'fa-play' : 'fa-pause';
+            const suspendTitle = isSuspended ? 'Reactivate Hospital' : 'Suspend Hospital';
+
+            list.innerHTML += `
+                <div class="custom-id-card ${cardClass}">
+                    <div class="status-badge ${badgeClass}">${data.status || 'Active'}</div>
+                    <img src="${data.logoUrl}" class="id-photo" onerror="this.src='https://via.placeholder.com/60?text=No+Logo'">
+                    <div style="flex:1; overflow:hidden;">
+                        <h4 style="margin:0; font-size:15px; color:var(--med-dark); font-weight:bold; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;" title="${data.hospitalName}">${data.hospitalName}</h4>
+                        <p style="margin:0; font-size:11px; color:#666;"><strong>Domain:</strong> ${data.customDomain || 'Not Linked'}</p>
+                        <p style="margin:0; font-size:11px; color:#666;"><strong>ID:</strong> ${data.adminEmail}</p>
+                        <p style="margin:0; font-size:10px; color:#888;">Plan: ${data.plan || 'N/A'} | Exp: ${data.expiryDate || 'N/A'}</p>
+                        <span style="font-size:10px; background:var(--med-teal); color:white; padding:2px 5px; border-radius:3px; font-weight:bold; margin-top: 5px; display: inline-block;">CODE: ${data.hospitalCode}</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="action-icon text-success" style="background:#e8f8f5; border:1px solid var(--success);" onclick="openBillingManage('${data.docId}')" title="Approve Recharge"><i class="fas fa-file-invoice-dollar"></i></button>
+                        <button class="action-icon database" onclick="openTenantDataManage('${data.docId}')" title="Manage Tenant Database"><i class="fas fa-database"></i></button>
+                        <button class="action-icon share" onclick="shareCredentials('${data.hospitalName.replace(/'/g, "\\'")}', '${data.adminEmail}', '${data.adminPass}', '${data.customDomain}')" title="Share Login Details"><i class="fas fa-share-alt"></i></button>
+                        <button class="action-icon edit" onclick="editHospital('${data.docId}')" title="Edit Data"><i class="fas fa-edit"></i></button>
+                        <button class="action-icon suspend" onclick="toggleStatus('${data.docId}', '${data.status}')" title="${suspendTitle}"><i class="fas ${suspendIcon}"></i></button>
+                        <button class="action-icon wipe" onclick="deleteHospPrompt('${data.docId}', '${data.hospitalCode}')" title="DANGER: REMOVE"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function filterHospitals() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('filterStatus').value;
+        const filtered = globalHospitalsData.filter(hosp => {
+            const matchesQuery = hosp.hospitalName.toLowerCase().includes(query) || hosp.hospitalCode.toLowerCase().includes(query) || (hosp.customDomain && hosp.customDomain.includes(query));
+            const matchesStatus = statusFilter === 'All' || (hosp.status || 'Active') === statusFilter;
+            return matchesQuery && matchesStatus;
+        });
+        renderHospitalsGrid(filtered);
+    }
+
+    // 4. ACTION BUTTON FUNCTIONS
+    async function toggleStatus(docId, currentStatus) {
+        const newStatus = currentStatus === 'Suspended' ? 'Active' : 'Suspended';
+        const actionText = newStatus === 'Suspended' ? 'suspend' : 'reactivate';
+        const result = await Swal.fire({ title: `Are you sure?`, text: `You are about to ${actionText} this hospital.`, icon: 'warning', showCancelButton: true, confirmButtonText: `Yes, ${actionText}` });
+        if(result.isConfirmed) {
+            await db.collection('hospitals').doc(docId).update({ status: newStatus });
+            Swal.fire('Updated', `Hospital status is now ${newStatus}`, 'success');
+        }
+    }
+
+    function deleteHospPrompt(docId, hospCode) {
+        Swal.fire({
+            title: 'Delete Hospital?', html: `Type <b>${hospCode}</b> to permanently delete this hospital.`, input: 'text', icon: 'error', showCancelButton: true, confirmButtonText: 'Permanently Delete',
+            preConfirm: (val) => { if (val !== hospCode) Swal.showValidationMessage('Clinic Code does not match!'); }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await db.collection('hospitals').doc(docId).delete();
+                Swal.fire('Deleted!', 'Hospital record removed.', 'success');
+            }
+        });
+    }
+
+    function shareCredentials(hospName, email, password, domain) {
+        const portalLink = domain ? `https://${domain}` : "Domain not set";
+        const shareText = `🏥 *Welcome to ${hospName}* \n\nAdmin login credentials:\n\n🌐 *Portal:* ${portalLink}\n📧 *ID:* ${email}\n🔑 *Pass:* ${password}\n\nKeep this secure.`;
+        if (navigator.share) navigator.share({ title: 'Login', text: shareText }).catch(() => copyToClipboard(shareText)); 
+        else copyToClipboard(shareText);
+    }
+    function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => Swal.fire('Copied', 'Credentials copied to clipboard!', 'success')); }
+
+    async function editHospital(docId) {
+        const doc = await db.collection('hospitals').doc(docId).get();
+        if(doc.exists) {
+            const data = doc.data(); 
+            document.getElementById('editHospId').value = doc.id;
+            document.getElementById('hospName').value = data.hospitalName || ""; 
+            document.getElementById('hospCode').value = data.hospitalCode || ""; document.getElementById('hospCode').readOnly = true; 
+            document.getElementById('hospDomain').value = data.customDomain || "";
+            document.getElementById('hospPass').value = data.adminPass || "";
+            document.getElementById('hospPhone').value = data.phone || ""; 
+            document.getElementById('hospPlan').value = data.plan || "Annual"; 
+            document.getElementById('hospExpiry').value = data.expiryDate || ""; 
+            if(data.firebaseConfig) document.getElementById('hospFirebaseConfig').value = JSON.stringify(JSON.parse(data.firebaseConfig), null, 2); 
+            
+            document.getElementById('formActionTitle').innerHTML = `<i class="fas fa-edit text-info"></i> EDIT HOSPITAL: ${data.hospitalName}`; 
+            document.getElementById('submitBtn').innerHTML = `<i class="fas fa-save me-2"></i>UPDATE DATA`; 
+            document.getElementById('cancelEditBtn').style.display = 'inline-block'; 
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+    }
+    function cancelEdit() {
+        document.getElementById('addHospForm').reset(); document.getElementById('editHospId').value = ""; document.getElementById('hospCode').readOnly = false;
+        document.getElementById('formActionTitle').innerHTML = `<i class="fas fa-plus-square text-success"></i> DEPLOY NEW HOSPITAL SERVER`; 
+        document.getElementById('submitBtn').innerHTML = `<i class="fas fa-rocket me-2"></i>DEPLOY & AUTO-GENERATE`; 
+        document.getElementById('cancelEditBtn').style.display = 'none'; 
+    }
+
+    // 5. TARGETED DATA WIPE (DUSTBIN) - NOW FOR PATIENTS
+    function openTenantDataManage(docId) {
+        targetHospData = globalHospitalsData.find(s => s.docId === docId);
+        if (!targetHospData || !targetHospData.firebaseConfig) return Swal.fire('Error', 'Invalid Firebase Config.', 'error');
+        document.getElementById('targetHospName').innerText = targetHospData.hospitalName;
+        document.getElementById('superAdminBulkDate').value = "";
+        try {
+            const configJson = JSON.parse(targetHospData.firebaseConfig);
+            const appName = "TenantManage_" + targetHospData.hospitalCode;
+            let tempApp = firebase.apps.find(app => app.name === appName) || firebase.initializeApp(configJson, appName);
+            currentActiveTenantDb = tempApp.firestore();
+            dataManageModalInstance.show();
+        } catch (error) { Swal.fire('Config Error', 'Could not parse tenant Firebase credentials.', 'error'); }
+    }
+
+    async function executeSuperAdminDateWipe() {
+        const dateVal = document.getElementById('superAdminBulkDate').value;
+        if (!dateVal) return Swal.fire('Wait!', 'Please select registration date first.', 'warning');
+        
+        const startOfDay = new Date(dateVal); startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(dateVal); endOfDay.setHours(23, 59, 59, 999);
+        const btn = document.getElementById('superAdminWipeBtn'); btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> SEARCHING...`;
+
+        try {
+            // Note: Targeting 'patients' collection instead of 'students'
+            const snap = await currentActiveTenantDb.collection('patients').where('timestamp', '>=', startOfDay.getTime()).where('timestamp', '<=', endOfDay.getTime()).get();
+            if (snap.empty) { btn.disabled = false; btn.innerHTML = `<i class="fas fa-trash me-2"></i> MOVE TO DUSTBIN`; return Swal.fire('No Data', `No patients found for this date.`, 'info'); }
+
+            const confirmResult = await Swal.fire({ title: 'Confirm Deletion?', html: `Found <b>${snap.size}</b> patients.<br>Move them to Recycle Bin?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#c0392b', confirmButtonText: 'Yes, Trash' });
+            if (confirmResult.isConfirmed) {
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> TRASHING...`;
+                const docs = snap.docs; const chunkSize = 200; const trashRef = currentActiveTenantDb.collection('system_trash'); const now = Date.now(); const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+                
+                for (let i = 0; i < docs.length; i += chunkSize) {
+                    const chunk = docs.slice(i, i + chunkSize); const batch = currentActiveTenantDb.batch();
+                    chunk.forEach(doc => {
+                        batch.set(trashRef.doc(), { originalCollection: 'patients', originalDocId: doc.id, deletedAt: now, expireAt: now + thirtyDaysInMs, docData: doc.data() });
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                }
+                Swal.fire('Success', `Successfully moved ${snap.size} patients to Dustbin!`, 'success');
+                dataManageModalInstance.hide();
+            }
+        } catch (error) { Swal.fire('Error', error.message, 'error'); } 
+        finally { btn.disabled = false; btn.innerHTML = `<i class="fas fa-trash me-2"></i> MOVE TO DUSTBIN`; }
+    }
+
+    // 6. GLOBAL SETTINGS (UPI & PLAN BUILDER)
+    async function fetchMasterSettings() {
+        const doc = await db.collection('saas_settings').doc('core').get();
+        if(doc.exists) {
+            document.getElementById('masterUpiInput').value = doc.data().masterUpi || '';
+            saasPlansData = doc.data().billingPlans || [];
+        }
+        renderPlanBuilder();
+    }
+    
+    function openMasterSettings() { globalSettingsModalInstance.show(); }
+    
+    function renderPlanBuilder() {
+        const container = document.getElementById('plansContainer'); container.innerHTML = "";
+        if(saasPlansData.length === 0) return container.innerHTML = "<p class='text-muted small text-center mb-0'>No plans created yet. Add a plan.</p>";
+        saasPlansData.forEach((plan, index) => {
+            container.innerHTML += `
+                <div class="d-flex gap-2 mb-2 align-items-center">
+                    <input type="number" class="form-control form-control-sm" placeholder="Months" value="${plan.months}" onchange="updatePlan(${index}, 'months', this.value)" style="width: 80px;">
+                    <span class="small fw-bold text-muted">Months</span>
+                    <input type="number" class="form-control form-control-sm" placeholder="Price (₹)" value="${plan.price}" onchange="updatePlan(${index}, 'price', this.value)">
+                    <button class="btn btn-sm btn-danger" onclick="removePlanRow(${index})"><i class="fas fa-times"></i></button>
+                </div>`;
+        });
+    }
+    function addPlanRow() { saasPlansData.push({ months: 1, price: 1000 }); renderPlanBuilder(); }
+    function removePlanRow(index) { saasPlansData.splice(index, 1); renderPlanBuilder(); }
+    function updatePlan(index, key, value) { saasPlansData[index][key] = parseInt(value) || 0; }
+
+    async function saveMasterSettings() {
+        const upi = document.getElementById('masterUpiInput').value.trim();
+        if(!upi) return alert("Enter valid UPI ID");
+        if(saasPlansData.length === 0) return alert("Please create at least one plan.");
+        try {
+            await db.collection('saas_settings').doc('core').set({ masterUpi: upi, billingPlans: saasPlansData }, { merge: true });
+            Swal.fire({ title: 'Broadcasting...', text: 'Updating Plans & UPI across all servers...', didOpen: () => { Swal.showLoading(); }});
+            
+            for(let hosp of globalHospitalsData) {
+                if(hosp.firebaseConfig) {
+                    try {
+                        const conf = JSON.parse(hosp.firebaseConfig); const appName = "TenantSync_" + hosp.hospitalCode;
+                        let tApp = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(conf, appName);
+                        await tApp.firestore().collection('settings').doc('subscription').set({ masterUpiId: upi, billingPlans: saasPlansData }, { merge: true });
+                    } catch(e) { console.warn("Failed sync for", hosp.hospitalCode); }
+                }
+            }
+            Swal.fire('Success', 'Settings Broadcasted to all hospitals successfully!', 'success');
+            globalSettingsModalInstance.hide();
+        } catch(e) { alert("Error: " + e.message); }
+    }
+
+    // 7. BILLING APPROVAL LOGIC
+    async function openBillingManage(docId) {
+        targetHospData = globalHospitalsData.find(s => s.docId === docId);
+        document.getElementById('billingHospId').value = docId;
+        document.getElementById('billingHospName').innerText = targetHospData.hospitalName;
+        document.getElementById('billingExpiryDate').value = targetHospData.expiryDate || "";
+        document.getElementById('pendingUtrSection').style.display = 'none';
+        
+        billingModalInstance.show();
+
+        try {
+            const configJson = JSON.parse(targetHospData.firebaseConfig);
+            const appName = "TenantBilling_" + targetHospData.hospitalCode;
+            let tempApp = firebase.apps.find(app => app.name === appName) || firebase.initializeApp(configJson, appName);
+            currentActiveTenantDb = tempApp.firestore();
+
+            const pendingSnap = await currentActiveTenantDb.collection('billing_requests').where('status', '==', 'Pending').limit(1).get();
+            if(!pendingSnap.empty) {
+                const req = pendingSnap.docs[0]; const d = req.data();
+                document.getElementById('reqPlanMonths').innerText = d.planMonths;
+                document.getElementById('reqAmount').innerText = "₹" + d.amount;
+                document.getElementById('pendingUtrNumber').innerText = d.utrNumber;
+                document.getElementById('pendingUtrSection').style.display = 'block';
+                document.getElementById('pendingUtrSection').dataset.requestId = req.id;
+
+                let currentExp = new Date(targetHospData.expiryDate || new Date());
+                let baseDate = currentExp < new Date() ? new Date() : currentExp; 
+                baseDate.setMonth(baseDate.getMonth() + parseInt(d.planMonths));
+                document.getElementById('billingExpiryDate').value = baseDate.toISOString().split('T')[0];
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function executePlanUpdate() {
+        const docId = document.getElementById('billingHospId').value;
+        const newDate = document.getElementById('billingExpiryDate').value;
+        if(!newDate) return alert("Select expiry date");
+
+        const btn = document.getElementById('updateBillingBtn');
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> UPDATING...`; btn.disabled = true;
+
+        try {
+            await db.collection('hospitals').doc(docId).update({ expiryDate: newDate, status: 'Active' });
+
+            if(currentActiveTenantDb) {
+                await currentActiveTenantDb.collection('settings').doc('subscription').set({
+                    expiryDate: newDate, status: 'Active', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                const requestId = document.getElementById('pendingUtrSection').dataset.requestId;
+                if(requestId && document.getElementById('pendingUtrSection').style.display === 'block') {
+                    await currentActiveTenantDb.collection('billing_requests').doc(requestId).update({ status: 'Approved' });
+                }
+            }
+            Swal.fire('Unlocked!', `Panel activated till ${newDate}.`, 'success');
+            billingModalInstance.hide();
+        } catch (error) { Swal.fire('Error', error.message, 'error'); } 
+        finally { btn.innerHTML = `<i class="fas fa-check-circle me-2"></i> APPROVE & UNLOCK PANEL`; btn.disabled = false; }
+    }
+</script>
+</body>
+</html>
