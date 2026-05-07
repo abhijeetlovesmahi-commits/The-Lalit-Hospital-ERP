@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Patient - Hospital Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="sidebar">
+        <div id="brand-name"></div>
+        <ul id="menu-list"></ul>
+    </div>
+
+    <div id="main-content">
+        <h2>Register New Patient</h2>
+        
+        <form class="glass-form" id="patient-form">
+            <input type="text" id="p-name" class="glass-input" placeholder="Patient Full Name" required>
+            <input type="number" id="p-age" class="glass-input" placeholder="Age" required>
+            
+            <select id="p-gender" class="glass-input" required>
+                <option value="" disabled selected style="color: black;">Select Gender</option>
+                <option value="Male" style="color: black;">Male</option>
+                <option value="Female" style="color: black;">Female</option>
+                <option value="Other" style="color: black;">Other</option>
+            </select>
+            
+            <input type="tel" id="p-phone" class="glass-input" placeholder="Phone Number" required>
+            <input type="text" id="p-disease" class="glass-input" placeholder="Disease / Symptoms" required>
+            
+            <button type="submit" class="glass-btn">Register Patient</button>
+        </form>
+        
+        <div id="success-msg" style="color: #00ea00; margin-top: 15px; display: none; font-weight: bold;">
+            Patient Registered Successfully!
+        </div>
+    </div>
+
+    <script src="configuration.js"></script>
+    <script src="brand.js"></script>
+    <script src="menu.js"></script>
+    <script src="patient.js"></script> </body>
+</html>
