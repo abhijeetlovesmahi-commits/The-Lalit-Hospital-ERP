@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Reset & Recycle Bin | MedCore Hospital Engine</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+
+    <script src="firebase-config.js"></script>
+    <script src="brand.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body { font-family: 'Poppins', sans-serif; background: #f0f8ff; }
+        .brand-font { font-family: 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+
+        .medical-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-top: 5px solid #00B4D8; }
+        
+        .danger-zone { border: 2px dashed #dc3545; background: #fff5f5; padding: 30px; border-radius: 12px; margin-top: 20px; }
+        .recycle-zone { border: 2px dashed #198754; background: #f0fdf4; padding: 30px; border-radius: 12px; margin-top: 30px; }
+        
+        .collection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;}
+        .custom-checkbox-card { background: #fff; border: 1px solid #ffcdd2; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .custom-checkbox-card:hover { border-color: #dc3545; box-shadow: 0 4px 8px rgba(220,53,69,0.15); transform: translateY(-2px);}
+        .custom-checkbox-card input[type="checkbox"] { transform: scale(1.5); cursor: pointer; }
+        .custom-checkbox-card label { cursor: pointer; font-weight: 600; color: #444; margin: 0; width: 100%; }
+        .custom-checkbox-card .desc { font-size: 0.75rem; color: #777; font-weight: 400; display: block; margin-top: 4px; line-height: 1.2; }
+        
+        .trash-card { background: #fff; border-left: 4px solid #198754; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+        
+        .progress-bar-custom { height: 10px; border-radius: 5px; background-color: #e9ecef; margin-top: 15px; display: none; overflow: hidden; border: 1px solid #ddd; }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.3s ease; }
+        .bg-danger-fill { background-color: #dc3545; }
+        .bg-success-fill { background-color: #198754; }
+
+        /* Modal Custom Styles */
+        .filter-bar { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #dee2e6; }
+        .table-checkbox { transform: scale(1.3); cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<div class="main-content" style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    <div class="medical-card">
+        
+        <div class="header text-center" id="brand-header-container" style="border-bottom: 2px solid #bde0fe; margin-bottom: 25px; padding-bottom: 15px;"></div>
+        
+        <h2 class="fw-bold text-center mb-4 brand-font" style="color: #dc3545;">
+            <i class="fas fa-exclamation-triangle me-2"></i> SYSTEM DATA MANAGEMENT
+        </h2>
+
+        <div class="alert alert-info text-dark fw-bold shadow-sm" role="alert" style="background-color: #E0FDFC; border-color: #00B4D8;">
+            <i class="fas fa-shield-alt me-2" style="color: #00B4D8;"></i> <b>Safe Delete System:</b> Data deleted from here goes to the Recycle Bin for 30 days before permanent deletion.
+        </div>
+
+        <div class="danger-zone shadow-sm">
+            <h5 class="fw-bold text-danger mb-1"><i class="fas fa-trash-alt me-2"></i> 1. Factory Reset (Move to Dustbin)</h5>
+            <p class="small text-danger fw-bold mb-3">Selected collections will be removed from the main system and kept in the dustbin for 1 month.</p>
+
+            <div class="collection-grid">
+                <div class="custom-checkbox-card" onclick="toggleCheck('col_patients')">
+                    <input type="checkbox" id="col_patients" value="patients" onclick="event.stopPropagation()">
+                    <label for="col_patients">Active Patients <span class="desc">Moves all currently admitted/active patients to trash.</span></label>
+                </div>
+                <div class="custom-checkbox-card" onclick="toggleCheck('col_discharged')">
+                    <input type="checkbox" id="col_discharged" value="discharged_patients" onclick="event.stopPropagation()">
+                    <label for="col_discharged">Discharged Patients <span class="desc">Moves past patient medical records to trash.</span></label>
+                </div>
+                <div class="custom-checkbox-card" onclick="toggleCheck('col_billing')">
+                    <input type="checkbox" id="col_billing" value="billing_invoices" onclick="event.stopPropagation()">
+                    <label for="col_billing">Billing & Invoices <span class="desc">Moves hospital payment history to trash.</span></label>
+                </div>
+                <div class="custom-checkbox-card" onclick="toggleCheck('col_services')">
+                    <input type="checkbox" id="col_services" value="services_master" onclick="event.stopPropagation()">
+                    <label for="col_services">Services & Rate Card <span class="desc">Moves treatment and bed pricing to trash.</span></label>
+                </div>
+                <div class="custom-checkbox-card" onclick="toggleCheck('col_appointments')">
+                    <input type="checkbox" id="col_appointments" value="appointments" onclick="event.stopPropagation()">
+                    <label for="col_appointments">OPD Appointments <span class="desc">Moves doctor appointment bookings to trash.</span></label>
+                </div>
+                <div class="custom-checkbox-card" onclick="toggleCheck('col_staff')">
+                    <input type="checkbox" id="col_staff" value="staff" onclick="event.stopPropagation()">
+                    <label for="col_staff">Doctors & Staff <span class="desc">Moves hospital employee records to trash.</span></label>
+                </div>
+            </div>
+
+            <div class="mt-3 text-end">
+                <button class="btn btn-sm btn-outline-danger fw-bold" onclick="selectAllCollections()">
+                    <i class="fas fa-check-double me-1"></i> SELECT ALL
+                </button>
+            </div>
+
+            <div class="progress-bar-custom" id="resetProgressContainer">
+                <div class="progress-fill bg-danger-fill" id="resetProgressBar"></div>
+            </div>
+            <div id="resetStatusText" class="text-center mt-2 fw-bold text-danger" style="font-size: 0.9rem; display: none;"></div>
+
+            <button id="wipeBtn" class="btn btn-danger w-100 fw-bold py-3 mt-4 shadow" style="font-size: 1.1rem; border-radius: 8px;" onclick="executeSmartReset()">
+                <i class="fas fa-trash me-2"></i> MOVE SELECTED TO DUSTBIN
+            </button>
+
+            <hr class="mt-5 mb-4" style="border-top: 2px dashed #dc3545; opacity: 0.5;">
+            <h5 class="fw-bold text-danger mb-1"><i class="fas fa-calendar-times me-2"></i> Targeted Cleanup (By Date)</h5>
+            <p class="small text-danger fw-bold mb-3">Remove bulk registered patients from a specific date and move them to the dustbin safely.</p>
+            
+            <div class="d-flex gap-3 align-items-center bg-white p-3 rounded shadow-sm" style="border: 1px solid #ffcdd2;">
+                <div class="flex-grow-1">
+                    <label class="small fw-bold text-muted mb-1">Select Registration Date</label>
+                    <input type="date" id="bulkDeleteDate" class="form-control border-danger shadow-none">
+                </div>
+                <div class="pt-4">
+                    <button id="dateWipeBtn" onclick="executeDateWipe()" class="btn btn-danger fw-bold px-4">
+                        <i class="fas fa-trash me-2"></i> MOVE TO DUSTBIN
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="recycle-zone shadow-sm">
+            <h5 class="fw-bold text-success mb-1 brand-font"><i class="fas fa-recycle me-2"></i> 2. System Dustbin (Recovery Zone)</h5>
+            <p class="small text-muted fw-bold mb-3">Items here are automatically deleted after 30 days. You can view, filter, and selectively restore them.</p>
+            
+            <div id="trashLoading" class="text-center py-3 text-info"><i class="fas fa-spinner fa-spin me-2"></i> Checking dustbin...</div>
+            <div id="trashContainer"></div>
+
+            <div class="progress-bar-custom" id="restoreProgressContainer">
+                <div class="progress-fill bg-success-fill" id="restoreProgressBar"></div>
+            </div>
+            <div id="restoreStatusText" class="text-center mt-2 fw-bold text-success" style="font-size: 0.9rem; display: none;"></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="viewTrashModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white border-0">
+        <h5 class="modal-title fw-bold brand-font"><i class="fas fa-box-open me-2"></i> Dustbin: <span id="viewTrashTitle" class="text-warning"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body bg-light" id="viewTrashBody">
+        
+        <div class="filter-bar d-flex flex-wrap gap-3 align-items-end" id="trashFilters" style="display: none !important;">
+            <div class="flex-grow-1" style="min-width: 200px;">
+                <label class="small fw-bold text-muted mb-1">Smart Search (Name, Ward, ID, Invoice)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="trashFilterSearch" class="form-control" placeholder="Type anything to search..." onkeyup="applyTrashFilters()">
+                </div>
+            </div>
+            <div>
+                <label class="small fw-bold text-muted mb-1">Filter by Deletion Date</label>
+                <input type="date" id="trashFilterDate" class="form-control" onchange="applyTrashFilters()">
+            </div>
+            <div>
+                <button class="btn btn-secondary" onclick="resetTrashFilters()"><i class="fas fa-sync-alt me-1"></i> Reset Filters</button>
+            </div>
+        </div>
+
+        <div id="trashTableContainer" class="bg-white p-3 rounded shadow-sm border">
+            <div class="text-center py-5 text-info" id="trashTableLoading"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Fetching records...</div>
+            <div id="trashTableContent"></div>
+        </div>
+
+      </div>
+      <div class="modal-footer bg-light justify-content-between border-top">
+          <div class="text-muted fw-bold">
+              Selected: <span id="selectedCountBadge" class="badge bg-primary fs-6">0</span>
+          </div>
+          <div>
+            <button type="button" class="btn btn-secondary fw-bold px-4" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-success fw-bold px-4 shadow-sm" id="btnRestoreSelected" onclick="restoreSelectedRecords()" disabled>
+                <i class="fas fa-undo-alt me-2"></i> RESTORE SELECTED
+            </button>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ==========================================
+// 🚀 FIREBASE SETUP FOR HOSPITAL TENANT
+// ==========================================
+const tenantConfigStr = localStorage.getItem('hospitalFirebaseConfig'); // Updated Key
+const brandDataStr = localStorage.getItem('hospitalBrandData'); // Updated Key
+
+if (!tenantConfigStr || !brandDataStr) {
+    window.location.href = "login.html"; 
+}
+
+const tenantConfig = JSON.parse(tenantConfigStr);
+const hospitalBrand = JSON.parse(brandDataStr);
+
+window.BRAND_DATA = window.BRAND_DATA || hospitalBrand;
+const exactHospitalCode = window.BRAND_DATA && window.BRAND_DATA.hospitalCode ? window.BRAND_DATA.hospitalCode : (hospitalBrand.hospitalCode || "default"); // Updated Key
+
+const appName = "Tenant_" + exactHospitalCode;
+
+let tenantApp;
+try {
+    tenantApp = firebase.app(appName);
+} catch(e) {
+    tenantApp = firebase.initializeApp(tenantConfig, appName);
+}
+window.db = tenantApp.firestore();
+const tenantAuth = tenantApp.auth();
+
+tenantAuth.onAuthStateChanged(user => {
+    if (!user) window.location.href = "login.html";
+    if (typeof initUniversalMenu === 'function') initUniversalMenu();
+    loadRecycleBin();
+});
+
+// ==========================================
+// ZONE 1: MOVE TO TRASH LOGIC (FACTORY RESET)
+// ==========================================
+function toggleCheck(id) { const cb = document.getElementById(id); cb.checked = !cb.checked; }
+
+function selectAllCollections() {
+    const checkboxes = document.querySelectorAll('.custom-checkbox-card input[type="checkbox"]');
+    let allChecked = true;
+    checkboxes.forEach(cb => { if (!cb.checked) allChecked = false; });
+    checkboxes.forEach(cb => { cb.checked = !allChecked; });
+}
+
+async function moveCollectionToTrash(collectionName) {
+    const batchSize = 200; 
+    const collectionRef = window.db.collection(collectionName);
+    const query = collectionRef.limit(batchSize);
+    return new Promise((resolve, reject) => { processTrashBatch(query, collectionName, resolve, reject); });
+}
+
+async function processTrashBatch(query, collectionName, resolve, reject) {
+    try {
+        const snapshot = await query.get();
+        if (snapshot.size === 0) { resolve(); return; }
+        
+        const batch = window.db.batch();
+        const trashRef = window.db.collection('system_trash');
+        const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+
+        snapshot.docs.forEach((doc) => {
+            const newTrashDoc = trashRef.doc();
+            batch.set(newTrashDoc, {
+                originalCollection: collectionName,
+                originalDocId: doc.id,
+                deletedAt: now,
+                expireAt: now + thirtyDaysInMs,
+                docData: doc.data()
+            });
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        setTimeout(() => { processTrashBatch(query, collectionName, resolve, reject); }, 500);
+    } catch (error) { reject(error); }
+}
+
+async function executeSmartReset() {
+    const checkboxes = document.querySelectorAll('.custom-checkbox-card input[type="checkbox"]:checked');
+    const selectedCollections = Array.from(checkboxes).map(cb => cb.value);
+
+    if (selectedCollections.length === 0) return alert("Please select at least one module/collection to delete.");
+    const confirmText = prompt(`⚠️ WARNING!\nYou are about to move ${selectedCollections.length} module(s) to the dustbin.\nType "CONFIRM" in capital letters to proceed:`);
+    if (confirmText !== "CONFIRM") return alert("Reset Cancelled.");
+
+    const wipeBtn = document.getElementById('wipeBtn');
+    const progressContainer = document.getElementById('resetProgressContainer');
+    const progressBar = document.getElementById('resetProgressBar');
+    const statusText = document.getElementById('resetStatusText');
+
+    wipeBtn.disabled = true; wipeBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> MOVING TO DUSTBIN...`;
+    progressContainer.style.display = 'block'; statusText.style.display = 'block'; progressBar.style.width = '0%';
+
+    try {
+        for (let i = 0; i < selectedCollections.length; i++) {
+            const col = selectedCollections[i];
+            statusText.innerHTML = `<i class="fas fa-trash-alt me-1"></i> Moving <b>${col}</b> to dustbin...`;
+            await moveCollectionToTrash(col);
+            progressBar.style.width = `${Math.round(((i + 1) / selectedCollections.length) * 100)}%`;
+        }
+        statusText.innerHTML = `✅ Selected modules have been moved to Dustbin safely.`;
+        statusText.className = "text-success fw-bold mt-2 text-center";
+        wipeBtn.innerHTML = `<i class="fas fa-check-double me-2"></i> MOVED SUCCESSFULLY`;
+        wipeBtn.classList.replace('btn-danger', 'btn-success');
+        setTimeout(() => { window.location.reload(); }, 2000);
+    } catch (error) {
+        statusText.innerHTML = `❌ Error occurred. Check console.`;
+        wipeBtn.disabled = false; wipeBtn.innerHTML = `<i class="fas fa-trash me-2"></i> RETRY WIPE`;
+    }
+}
+
+async function executeDateWipe() {
+    const dateVal = document.getElementById('bulkDeleteDate').value;
+    if (!dateVal) return alert("Please select a date first.");
+
+    const startOfDay = new Date(dateVal); startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(dateVal); endOfDay.setHours(23, 59, 59, 999);
+
+    const btn = document.getElementById('dateWipeBtn');
+    const originalBtnHTML = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> SEARCHING...`;
+
+    try {
+        // Querying 'patients' instead of 'students'
+        const snap = await window.db.collection('patients')
+            .where('timestamp', '>=', startOfDay.getTime())
+            .where('timestamp', '<=', endOfDay.getTime())
+            .get();
+
+        if (snap.empty) {
+            btn.disabled = false; btn.innerHTML = originalBtnHTML;
+            return alert(`No patients found registered on ${dateVal}.`);
+        }
+
+        const confirmText = prompt(`⚠️ WARNING!\nFound ${snap.size} patients registered on ${dateVal}.\nType "CONFIRM" to move them to the dustbin:`);
+        if (confirmText !== "CONFIRM") {
+            btn.disabled = false; btn.innerHTML = originalBtnHTML;
+            return alert("Operation Cancelled.");
+        }
+
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> MOVING...`;
+        const docs = snap.docs; const chunkSize = 200;
+        const trashRef = window.db.collection('system_trash');
+        const now = Date.now(); const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+
+        for (let i = 0; i < docs.length; i += chunkSize) {
+            const chunk = docs.slice(i, i + chunkSize);
+            const batch = window.db.batch();
+            chunk.forEach(doc => {
+                const newTrashDoc = trashRef.doc();
+                batch.set(newTrashDoc, { originalCollection: 'patients', originalDocId: doc.id, deletedAt: now, expireAt: now + thirtyDaysInMs, docData: doc.data() });
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+        }
+
+        alert(`✅ Successfully moved ${snap.size} patients to Dustbin!`);
+        window.location.reload();
+
+    } catch (error) {
+        alert("An error occurred: " + error.message);
+        btn.disabled = false; btn.innerHTML = originalBtnHTML;
+    }
+}
+
+
+// ==========================================
+// ZONE 2: RECYCLE BIN & MAIN RESTORE
+// ==========================================
+async function loadRecycleBin() {
+    try {
+        await autoCleanExpiredTrash();
+
+        const snap = await window.db.collection('system_trash').get();
+        const container = document.getElementById('trashContainer');
+        document.getElementById('trashLoading').style.display = 'none';
+
+        if (snap.empty) {
+            container.innerHTML = `<div class="text-center text-success fw-bold py-3"><i class="fas fa-leaf fa-2x mb-2 text-success"></i><br>Your Dustbin is completely empty.</div>`;
+            return;
+        }
+
+        const groupedTrash = {};
+        snap.forEach(doc => {
+            const data = doc.data();
+            const colName = data.originalCollection;
+            if(!groupedTrash[colName]) groupedTrash[colName] = { count: 0, sampleDate: data.deletedAt };
+            groupedTrash[colName].count++;
+        });
+
+        let html = "";
+        for (const [colName, info] of Object.entries(groupedTrash)) {
+            const dateStr = new Date(info.sampleDate).toLocaleDateString('en-GB');
+            html += `
+                <div class="trash-card flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0 text-uppercase">${colName}</h6>
+                        <span class="badge bg-secondary">${info.count} Records</span>
+                        <small class="text-muted ms-2">Deleted around: ${dateStr}</small>
+                    </div>
+                    <div class="d-flex gap-2 mt-2 mt-sm-0">
+                        <button class="btn btn-sm btn-info text-white fw-bold px-3 shadow-sm" onclick="openAdvancedTrashView('${colName}')">
+                            <i class="fas fa-list-check me-1"></i> VIEW & FILTER
+                        </button>
+                        <button class="btn btn-sm btn-success fw-bold px-3 shadow-sm" onclick="restoreCollection('${colName}')">
+                            <i class="fas fa-undo-alt me-1"></i> RESTORE ALL
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+
+    } catch (error) {
+        document.getElementById('trashLoading').innerHTML = `<span class="text-danger">Error loading dustbin: ${error.message}</span>`;
+    }
+}
+
+async function autoCleanExpiredTrash() {
+    try {
+        const now = Date.now();
+        const snap = await window.db.collection('system_trash').get();
+        const batch = window.db.batch();
+        let expiredCount = 0;
+        snap.forEach(doc => {
+            if (doc.data().expireAt < now) { batch.delete(doc.ref); expiredCount++; }
+        });
+        if (expiredCount > 0) await batch.commit();
+    } catch (e) { console.error(e); }
+}
+
+async function restoreCollection(collectionName) {
+    if(!confirm(`Are you sure you want to restore ALL data for '${collectionName}' back to the live system?`)) return;
+
+    const progressContainer = document.getElementById('restoreProgressContainer');
+    const progressBar = document.getElementById('restoreProgressBar');
+    const statusText = document.getElementById('restoreStatusText');
+
+    progressContainer.style.display = 'block'; statusText.style.display = 'block'; progressBar.style.width = '0%';
+    statusText.innerText = `Restoring ${collectionName}... Please wait.`;
+
+    try {
+        const snap = await window.db.collection('system_trash').where('originalCollection', '==', collectionName).get();
+        const docs = snap.docs; const chunkSize = 200;
+        
+        for (let i = 0; i < docs.length; i += chunkSize) {
+            const chunk = docs.slice(i, i + chunkSize);
+            const batch = window.db.batch();
+            chunk.forEach(doc => {
+                const data = doc.data();
+                const originalRef = window.db.collection(collectionName).doc(data.originalDocId);
+                batch.set(originalRef, data.docData);
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+            progressBar.style.width = `${Math.round(((i + chunkSize) / docs.length) * 100)}%`;
+        }
+        statusText.innerText = `✅ Data completely restored to ${collectionName}!`;
+        setTimeout(() => { window.location.reload(); }, 2000);
+    } catch (error) { statusText.innerHTML = `❌ Restore Failed: ${error.message}`; }
+}
+
+
+// ==========================================
+// ADVANCED VIEW, FILTER & BULK RESTORE
+// ==========================================
+let currentTrashData = []; 
+let currentActiveCollection = "";
+
+async function openAdvancedTrashView(collectionName) {
+    currentActiveCollection = collectionName;
+    document.getElementById('viewTrashTitle').innerText = collectionName;
+    document.getElementById('trashFilters').style.display = 'none';
+    document.getElementById('trashTableContent').innerHTML = '';
+    document.getElementById('trashTableLoading').style.display = 'block';
+    
+    resetTrashFilters(false); 
+    updateSelectionCount();
+
+    const viewModal = new bootstrap.Modal(document.getElementById('viewTrashModal'));
+    viewModal.show();
+
+    try {
+        const snap = await window.db.collection('system_trash').where('originalCollection', '==', collectionName).get();
+        if(snap.empty) {
+            document.getElementById('trashTableLoading').style.display = 'none';
+            document.getElementById('trashTableContent').innerHTML = '<div class="alert alert-warning text-center">No records found.</div>';
+            return;
+        }
+
+        currentTrashData = snap.docs.map(doc => {
+            return { id: doc.id, data: doc.data() };
+        });
+
+        document.getElementById('trashTableLoading').style.display = 'none';
+        document.getElementById('trashFilters').style.display = 'flex'; 
+        
+        renderTrashTable(currentTrashData); 
+
+    } catch (error) {
+        document.getElementById('trashTableLoading').innerHTML = `<div class="text-danger">Error fetching data: ${error.message}</div>`;
+    }
+}
+
+function resetTrashFilters(reRender = true) {
+    document.getElementById('trashFilterSearch').value = "";
+    document.getElementById('trashFilterDate').value = "";
+    if(reRender) applyTrashFilters();
+}
+
+function applyTrashFilters() {
+    const searchText = document.getElementById('trashFilterSearch').value.toLowerCase();
+    const dateText = document.getElementById('trashFilterDate').value;
+
+    const filteredData = currentTrashData.filter(item => {
+        const dataObj = item.data;
+        const docData = dataObj.docData || {};
+        
+        let matchesDate = true;
+        if(dateText) {
+            const delDateStr = new Date(dataObj.deletedAt).toLocaleDateString('en-CA'); 
+            matchesDate = (delDateStr === dateText);
+        }
+
+        let matchesSearch = true;
+        if(searchText) {
+            const allValuesString = Object.values(docData).join(" ").toLowerCase() + " " + dataObj.originalDocId.toLowerCase();
+            matchesSearch = allValuesString.includes(searchText);
+        }
+
+        return matchesDate && matchesSearch;
+    });
+
+    renderTrashTable(filteredData);
+}
+
+function renderTrashTable(dataArray) {
+    const container = document.getElementById('trashTableContent');
+    
+    if(dataArray.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted py-4">No records match your filters.</div>';
+        updateSelectionCount();
+        return;
+    }
+
+    let html = `
+        <div class="table-responsive" style="max-height: 50vh; overflow-y: auto;">
+        <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.9rem;">
+            <thead class="table-dark sticky-top">
+                <tr>
+                    <th class="text-center" style="width: 50px;">
+                        <input type="checkbox" class="table-checkbox" id="selectAllTrashCb" onchange="toggleSelectAllTrash(this)">
+                    </th>
+                    <th>Record Detail (Smart View)</th>
+                    <th>Doc ID</th>
+                    <th>Deleted On</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    dataArray.forEach(item => {
+        const data = item.data;
+        const docData = data.docData || {};
+        
+        // Smartly extract best display name based on hospital collection type
+        let mainTitle = docData.name || docData.patientName || docData.title || docData.employeeName || docData.invoiceNo || "Unknown Record";
+        let subTitle = docData.wardName || docData.department || docData.designation || docData.amount || "";
+        if(subTitle) subTitle = `<span class="badge bg-info text-dark ms-2">${subTitle}</span>`;
+
+        const delDate = new Date(data.deletedAt).toLocaleString('en-GB');
+
+        html += `
+            <tr id="row-${item.id}">
+                <td class="text-center">
+                    <input type="checkbox" class="table-checkbox trash-item-cb" value="${item.id}" data-orig="${data.originalDocId}" onchange="updateSelectionCount()">
+                </td>
+                <td class="fw-bold">${mainTitle} ${subTitle}</td>
+                <td class="text-muted" style="font-size: 0.8rem;">${data.originalDocId}</td>
+                <td>${delDate}</td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+    updateSelectionCount();
+}
+
+function toggleSelectAllTrash(mainCheckbox) {
+    const checkboxes = document.querySelectorAll('.trash-item-cb');
+    checkboxes.forEach(cb => {
+        cb.checked = mainCheckbox.checked;
+    });
+    updateSelectionCount();
+}
+
+function updateSelectionCount() {
+    const checkedCount = document.querySelectorAll('.trash-item-cb:checked').length;
+    document.getElementById('selectedCountBadge').innerText = checkedCount;
+    document.getElementById('btnRestoreSelected').disabled = (checkedCount === 0);
+}
+
+async function restoreSelectedRecords() {
+    const checkboxes = document.querySelectorAll('.trash-item-cb:checked');
+    if(checkboxes.length === 0) return;
+
+    if(!confirm(`Are you sure you want to restore ${checkboxes.length} selected record(s)?`)) return;
+
+    const btn = document.getElementById('btnRestoreSelected');
+    const originalBtnText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> RESTORING...`;
+
+    try {
+        const batch = window.db.batch();
+        let writeCount = 0;
+        let processedCount = 0;
+
+        for(let i = 0; i < checkboxes.length; i++) {
+            const cb = checkboxes[i];
+            const trashId = cb.value;
+            const originalId = cb.getAttribute('data-orig');
+
+            const recordObj = currentTrashData.find(r => r.id === trashId);
+            if(recordObj) {
+                const originalRef = window.db.collection(currentActiveCollection).doc(originalId);
+                const trashRef = window.db.collection('system_trash').doc(trashId);
+
+                batch.set(originalRef, recordObj.data.docData);
+                batch.delete(trashRef);
+                writeCount += 2;
+                processedCount++;
+
+                if(writeCount >= 450) {
+                    await batch.commit();
+                    writeCount = 0;
+                }
+            }
+        }
+
+        if(writeCount > 0) {
+            await batch.commit();
+        }
+
+        alert(`✅ Successfully restored ${processedCount} records!`);
+        
+        const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewTrashModal'));
+        viewModal.hide();
+        loadRecycleBin();
+
+    } catch (error) {
+        alert("Error restoring records: " + error.message);
+        btn.disabled = false;
+        btn.innerHTML = originalBtnText;
+    }
+}
+</script>
+
+<script src="menu.js"></script>
+
+</body>
+</html>
