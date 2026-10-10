@@ -1,234 +1,513 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Login | MedCore Hospital Engine</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>लॉगिन और दुकान रजिस्ट्रेशन (Login) - Apna Bazar</title>
+    <meta name="theme-color" content="#1200b8">
+
+    <!-- Firebase & Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="brand.js"></script>
+
+    <!-- Tailwind & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Poppins:wght@300;400;500;600&display=swap');
-
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background: linear-gradient(135deg, #002B5B 0%, #00B4D8 100%);
-            height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
+            background-color: #f1f5f9;
             margin: 0;
+            padding: 0;
+            padding-bottom: 90px;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, select { user-select: auto; outline: none; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+
+        .royal-hero-bg {
+            background: linear-gradient(135deg, #1200b8 0%, #2400d8 55%, #0f172a 100%);
         }
 
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        .app-input {
             width: 100%;
-            max-width: 400px;
-            text-align: center;
-            backdrop-filter: blur(10px);
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            transition: all 0.2s ease;
+        }
+        .app-input:focus {
+            background: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
-        .hospital-logo {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .hosp-name {
-            font-family: 'Montserrat', sans-serif;
-            color: #002B5B;
-            font-weight: 800;
-            font-size: 1.4rem;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        .hosp-slogan {
-            color: #00B4D8;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-        }
-
-        .input-group-custom {
+        /* Glazed Shimmer Button */
+        .glazed-login-btn {
             position: relative;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .input-group-custom i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #888;
-        }
-
-        .form-control-custom {
-            width: 100%;
-            padding: 12px 15px 12px 45px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            transition: all 0.3s;
-        }
-
-        .form-control-custom:focus {
-            outline: none;
-            border-color: #00B4D8;
-            box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
-        }
-
-        .login-btn {
-            background: #002B5B;
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 10px;
-        }
-
-        .login-btn:hover {
-            background: #00B4D8;
-            box-shadow: 0 5px 15px rgba(0, 180, 216, 0.4);
-        }
-
-        .login-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            box-shadow: none;
+            overflow: hidden;
+            background: linear-gradient(135deg, #ffe500 0%, #f59e0b 100%);
+            color: #0f172a;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+            border: 1px solid #fbbf24;
         }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <img src="https://via.placeholder.com/100/00B4D8/FFFFFF?text=Logo" id="logoDisplay" class="hospital-logo" alt="Logo">
-        <div id="nameDisplay" class="hosp-name">MEDCORE ERP</div>
-        <div id="sloganDisplay" class="hosp-slogan">Secure Staff Portal</div>
-
-        <div id="errorMsg" class="alert alert-danger" style="display: none; font-size: 0.85rem; padding: 10px;"></div>
-
-        <form id="loginForm">
-            <div class="input-group-custom">
-                <i class="fas fa-envelope"></i>
-                <input type="email" id="userEmail" class="form-control-custom" placeholder="Staff Email ID" required>
-            </div>
-            
-            <div class="input-group-custom">
-                <i class="fas fa-lock"></i>
-                <input type="password" id="userPass" class="form-control-custom" placeholder="Password" required>
-            </div>
-
-            <button type="submit" id="loginBtn" class="login-btn">
-                <i class="fas fa-sign-in-alt me-2"></i> SECURE LOGIN
+    <!-- ================= TOP ROYAL HEADER ================= -->
+    <header class="sticky top-0 z-40 royal-hero-bg text-white pl-3.5 pr-14 py-3 flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-2.5 min-w-0">
+            <button onclick="safeGoBackHome()" class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center text-white active:scale-90 transition shrink-0" title="होमपेज पर वापस जाएं">
+                <i class="fas fa-arrow-left text-sm"></i>
             </button>
-        </form>
-        
-        <p style="margin-top: 20px; font-size: 0.75rem; color: #888;">Powered by The Lalit Soft Engine</p>
-    </div>
+            <div class="min-w-0">
+                <div class="flex items-center gap-1.5" onclick="secretAdminTap()">
+                    <h1 id="authBrandTitle" class="font-cinzel text-base font-black text-[#ffe500] tracking-wider truncate">Apna Bazar</h1>
+                    <span class="bg-white/15 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">सुरक्षित लॉगिन</span>
+                </div>
+                <p class="text-[10px] text-slate-200 font-semibold truncate">ग्राहक एवं दुकानदार अकाउंट केंद्र</p>
+            </div>
+        </div>
+    </header>
 
-<script>
-    // 1. Load Branding if available
-    const brandDataStr = localStorage.getItem('hospitalBrandData');
-    if(brandDataStr) {
-        const brand = JSON.parse(brandDataStr);
-        document.getElementById('nameDisplay').innerText = brand.hospitalName || "CarePlus Hospital";
-        if(brand.logoUrl) document.getElementById('logoDisplay').src = brand.logoUrl;
-        if(brand.slogan) document.getElementById('sloganDisplay').innerText = brand.slogan;
-    }
+    <main class="max-w-md mx-auto p-3.5 space-y-4">
 
-    // 2. Initialize Firebase (Tenant Setup)
-    const tenantConfigStr = localStorage.getItem('hospitalFirebaseConfig');
-    if (!tenantConfigStr) {
-        document.getElementById('errorMsg').style.display = 'block';
-        document.getElementById('errorMsg').innerText = "System Error: Hospital Server Configuration not found! Contact Super Admin.";
-        document.getElementById('loginBtn').disabled = true;
-    } else {
-        const tenantConfig = JSON.parse(tenantConfigStr);
-        let tenantApp;
-        try {
-            tenantApp = firebase.app("TenantApp");
-        } catch(e) {
-            tenantApp = firebase.initializeApp(tenantConfig, "TenantApp");
+        <!-- ================= ALREADY LOGGED-IN CARD ================= -->
+        <div id="alreadyLoggedCard" class="hidden bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-4 text-center space-y-3 shadow-xs">
+            <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto text-xl font-black" id="loggedAvatar">U</div>
+            <div>
+                <span class="text-[10px] font-black uppercase bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full" id="loggedRoleBadge">ACTIVE SESSION</span>
+                <h3 class="text-sm font-black text-slate-900 mt-1" id="loggedNameText">नमस्ते!</h3>
+                <p class="text-xs font-bold text-slate-500" id="loggedEmailText"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="window.location.href='index.html'" class="bg-slate-900 text-[#ffe500] font-black py-2.5 rounded-xl text-xs">
+                    🛍️ बाज़ार खोलें
+                </button>
+                <button onclick="window.location.href='account.html'" class="bg-blue-600 text-white font-black py-2.5 rounded-xl text-xs">
+                    ⚙️ मेरा अकाउंट
+                </button>
+            </div>
+            <button onclick="performCleanLogout()" class="w-full bg-rose-100 text-rose-700 font-extrabold py-2 rounded-xl text-xs">
+                <i class="fas fa-power-off mr-1"></i> लॉगआउट करें (Switch Account)
+            </button>
+        </div>
+
+        <!-- ================= MAIN AUTH CARD ================= -->
+        <div id="mainAuthCard" class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+
+            <div class="text-center space-y-1">
+                <div class="w-14 h-14 rounded-2xl royal-hero-bg text-[#ffe500] flex items-center justify-center text-2xl mx-auto shadow-md border-2 border-amber-300">
+                    <i class="fas fa-store"></i>
+                </div>
+                <h2 class="text-base font-black text-slate-900 pt-1">स्वागत है! अपना अकाउंट जोड़ें</h2>
+                <p class="text-xs text-slate-500 font-medium">ऑर्डर ट्रैक करने, उधार खाता देखने या अपनी दुकान चलाने के लिए लॉगिन करें</p>
+            </div>
+
+            <!-- 1-TAP GOOGLE LOGIN -->
+            <button type="button" onclick="signInWithGoogle()" id="googleBtn" class="w-full bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-300 font-extrabold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center gap-3 shadow-xs active:scale-98 transition cursor-pointer">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" class="w-5 h-5">
+                <span>1-Click में Google से लॉगिन करें (सबसे तेज़)</span>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <div class="h-px bg-slate-200 flex-1"></div>
+                <span class="text-[10px] font-extrabold text-slate-400 uppercase">या ईमेल व पासवर्ड से</span>
+                <div class="h-px bg-slate-200 flex-1"></div>
+            </div>
+
+            <!-- 3-MODE SWITCHER -->
+            <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                <button type="button" id="modeTab-login" onclick="switchAuthMode('login')" class="py-2 rounded-xl text-[11px] font-black bg-slate-900 text-[#ffe500] shadow-2xs transition cursor-pointer">
+                    🔑 लॉगिन
+                </button>
+                <button type="button" id="modeTab-signup" onclick="switchAuthMode('signup')" class="py-2 rounded-xl text-[11px] font-bold text-slate-600 transition cursor-pointer">
+                    👤 नया अकाउंट
+                </button>
+                <button type="button" id="modeTab-merchant" onclick="switchAuthMode('merchant')" class="py-2 rounded-xl text-[11px] font-bold text-slate-600 transition cursor-pointer">
+                    🏪 नई दुकान
+                </button>
+            </div>
+
+            <div id="authMessage" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
+
+            <!-- ==================== FORM A: LOGIN / SIGNUP ==================== -->
+            <div id="standardAuthForm" class="space-y-3">
+                <div id="signupNameBox" class="hidden">
+                    <label class="block text-[11px] font-extrabold text-slate-600 mb-1">आपका पूरा नाम *</label>
+                    <input type="text" id="custSignUpName" placeholder="जैसे: राजू कुमार" class="app-input">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-600 mb-1">ईमेल आईडी (Email Address) *</label>
+                    <input type="email" id="email" placeholder="example@gmail.com" class="app-input">
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[11px] font-extrabold text-slate-600">पासवर्ड (Password) *</label>
+                        <button type="button" onclick="forgotPassword()" class="text-[10px] font-extrabold text-blue-600 hover:underline cursor-pointer">पासवर्ड भूल गए?</button>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="password" placeholder="कम से कम 6 अक्षर का पासवर्ड" class="app-input pr-10" onkeypress="if(event.key==='Enter') handleMainAction()">
+                        <button type="button" onclick="togglePassVisibility('password', this)" class="absolute right-3 top-3 text-slate-400 hover:text-slate-700 cursor-pointer">
+                            <i class="fas fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== FORM B: MERCHANT STORE ==================== -->
+            <div id="merchantRegisterForm" class="hidden space-y-3">
+                <div class="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-[11px] font-bold text-amber-900">
+                    ✨ अपनी दुकान को <b>Apna Bazar</b> से जोड़ें और अपना ऑनलाइन स्टोर, POS बिलिंग व उधार खाता तुरंत शुरू करें!
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-slate-600 mb-1">दुकान का नाम *</label>
+                        <input type="text" id="newStoreName" placeholder="जैसे: माँ तारा किराना" class="app-input">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-slate-600 mb-1">बाज़ार का नाम *</label>
+                        <input type="text" id="newMarketName" value="मड़ैया बाजार" placeholder="मड़ैया बाजार" class="app-input">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-600 mb-1">दुकान का WhatsApp नंबर (10 अंक) *</label>
+                    <input type="tel" maxlength="10" id="newShopPhone" placeholder="9876543210" class="app-input">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-600 mb-1">दुकानदार की ईमेल आईडी *</label>
+                    <input type="email" id="newEmail" placeholder="shopkeeper@gmail.com" class="app-input">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-600 mb-1">नया पासवर्ड बनाएं *</label>
+                    <div class="relative">
+                        <input type="password" id="newPassword" placeholder="कम से कम 6 अक्षर" class="app-input pr-10">
+                        <button type="button" onclick="togglePassVisibility('newPassword', this)" class="absolute right-3 top-3 text-slate-400 cursor-pointer">
+                            <i class="fas fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN SUBMIT BUTTON -->
+            <button type="button" id="loginBtn" onclick="handleMainAction()" class="glazed-login-btn w-full py-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-98 transition cursor-pointer">
+                <span id="mainBtnText">लॉगिन करें (Continue)</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <!-- Skip to Bazar -->
+            <button type="button" onclick="safeGoBackHome()" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition cursor-pointer">
+                बिना लॉगिन के खरीदारी जारी रखें (Skip to Bazar) →
+            </button>
+
+        </div>
+
+    </main>
+
+    <script>
+        if (window.ShopBrand && (ShopBrand.name || ShopBrand.storeName)) {
+            const bName = ShopBrand.name || ShopBrand.storeName;
+            document.getElementById('authBrandTitle').innerText = bName;
+            document.title = `लॉगिन - ${bName}`;
         }
-        
-        const tenantAuth = tenantApp.auth();
-        const tenantDb = tenantApp.firestore();
 
-        // 3. Login Logic
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('userEmail').value.trim();
-            const pass = document.getElementById('userPass').value;
-            const btn = document.getElementById('loginBtn');
-            const errorBox = document.getElementById('errorMsg');
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const msgBox = document.getElementById('authMessage');
+        const ADMIN_EMAIL = "abhijeetlovesmahi@gmail.com";
 
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> AUTHENTICATING...';
-            errorBox.style.display = 'none';
+        let currentAuthMode = 'login';
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnToPage = urlParams.get('redirect') || 'index.html';
+
+        if (urlParams.get('action') === 'logout') {
+            auth.signOut().catch(() => {});
+        }
+
+        function safeGoBackHome() {
+            if (window.parent && window.parent !== window) {
+                window.parent.location.href = 'index.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        function togglePassVisibility(inputId, btnEl) {
+            const inp = document.getElementById(inputId);
+            const icon = btnEl.querySelector('i');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fas fa-eye-slash text-xs text-blue-600';
+            } else {
+                inp.type = 'password';
+                icon.className = 'fas fa-eye text-xs';
+            }
+        }
+
+        function showMessage(text, isError = true) {
+            if (!text) {
+                msgBox.classList.add('hidden');
+                return;
+            }
+            msgBox.classList.remove('hidden');
+            msgBox.className = isError
+                ? "p-3 rounded-xl text-xs font-bold text-center bg-rose-50 text-rose-700 border border-rose-200"
+                : "p-3 rounded-xl text-xs font-bold text-center bg-emerald-50 text-emerald-800 border border-emerald-200";
+            msgBox.innerText = text;
+        }
+
+        function switchAuthMode(mode) {
+            currentAuthMode = mode;
+            showMessage("");
+
+            ['login', 'signup', 'merchant'].forEach(t => {
+                const el = document.getElementById(`modeTab-${t}`);
+                if (t === mode) {
+                    el.className = "py-2 rounded-xl text-[11px] font-black bg-slate-900 text-[#ffe500] shadow-2xs transition cursor-pointer";
+                } else {
+                    el.className = "py-2 rounded-xl text-[11px] font-bold text-slate-600 transition cursor-pointer";
+                }
+            });
+
+            const stdForm = document.getElementById('standardAuthForm');
+            const merchForm = document.getElementById('merchantRegisterForm');
+            const nameBox = document.getElementById('signupNameBox');
+            const btnText = document.getElementById('mainBtnText');
+
+            if (mode === 'login') {
+                stdForm.classList.remove('hidden');
+                merchForm.classList.add('hidden');
+                nameBox.classList.add('hidden');
+                btnText.innerText = "लॉगिन करें (Sign In)";
+            } else if (mode === 'signup') {
+                stdForm.classList.remove('hidden');
+                merchForm.classList.add('hidden');
+                nameBox.classList.remove('hidden');
+                btnText.innerText = "नया अकाउंट बनाएं (Create Account)";
+            } else if (mode === 'merchant') {
+                stdForm.classList.add('hidden');
+                merchForm.classList.remove('hidden');
+                btnText.innerText = "नई दुकान रजिस्टर करें (Launch Store)";
+            }
+        }
+
+        function secretAdminTap() {
+            switchAuthMode('merchant');
+        }
+
+        function executeMasterRedirect(page = 'index.html') {
+            if (window.parent && window.parent !== window) {
+                window.parent.location.href = page;
+            } else {
+                window.location.replace(page);
+            }
+        }
+
+        async function setUserDataAndRedirect(user, targetPage = null) {
+            const email = user.email ? user.email.trim().toLowerCase() : "";
+            const masterAdminEmail = ADMIN_EMAIL.trim().toLowerCase();
+
+            localStorage.setItem('userEmail', email);
+            localStorage.setItem('userName', user.displayName || email.split('@')[0] || 'User');
 
             try {
-                // Step A: Firebase Auth
-                const userCredential = await tenantAuth.signInWithEmailAndPassword(email, pass);
-                const user = userCredential.user;
-
-                btn.innerHTML = '<i class="fas fa-check-circle me-2"></i> FETCHING ROLE...';
-
-                // Step B: Check Staff Role from Database
-                const staffQuery = await tenantDb.collection('staff').where('loginEmail', '==', email).get();
-                
-                if (staffQuery.empty) {
-                    throw new Error("Login successful, but your Staff Profile was not found in the database. Contact Admin.");
+                const roleDoc = await db.collection('userRoles').doc(email).get();
+                if (roleDoc.exists) {
+                    const data = roleDoc.data();
+                    localStorage.setItem('userRole', data.role || (email === masterAdminEmail ? 'admin' : 'customer'));
+                    if (data.shopId) localStorage.setItem('activeShopId', data.shopId);
+                } else if (email === masterAdminEmail) {
+                    localStorage.setItem('userRole', 'admin');
+                    if (!localStorage.getItem('activeShopId')) localStorage.setItem('activeShopId', 'lalit_main');
+                } else {
+                    localStorage.setItem('userRole', 'customer');
                 }
+            } catch (e) {
+                if (email === masterAdminEmail) localStorage.setItem('userRole', 'admin');
+                else localStorage.setItem('userRole', 'customer');
+            }
 
-                // Step C: Save Data locally & Redirect
-                const staffData = staffQuery.docs[0].data();
-                
-                localStorage.setItem('staffId', staffData.staffID);
-                localStorage.setItem('staffRole', staffData.role); // e.g. 'admin', 'doctor', 'reception'
-                localStorage.setItem('staffName', staffData.name);
+            const finalDest = targetPage || returnToPage || 'index.html';
+            executeMasterRedirect(finalDest);
+        }
 
-                btn.innerHTML = '<i class="fas fa-door-open me-2"></i> ENTERING PORTAL...';
-                
-                // Redirect to main software screen
-                setTimeout(() => {
-                    window.location.href = "index.html"; 
-                }, 1000);
-
-            } catch (error) {
-                let msg = error.message;
-                if(error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    msg = "Invalid Email or Password. Please try again.";
-                }
-                errorBox.innerText = msg;
-                errorBox.style.display = 'block';
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> SECURE LOGIN';
+        auth.onAuthStateChanged((user) => {
+            if (user && urlParams.get('action') !== 'logout') {
+                document.getElementById('alreadyLoggedCard').classList.remove('hidden');
+                const name = user.displayName || localStorage.getItem('userName') || user.email;
+                const role = (localStorage.getItem('userRole') || 'customer').toUpperCase();
+                document.getElementById('loggedAvatar').innerText = String(name).charAt(0).toUpperCase();
+                document.getElementById('loggedNameText').innerText = name;
+                document.getElementById('loggedEmailText').innerText = user.email || '';
+                document.getElementById('loggedRoleBadge').innerText = `LOGGED IN AS ${role}`;
             }
         });
-    }
-</script>
+
+        async function performCleanLogout() {
+            await auth.signOut();
+            localStorage.setItem('userRole', 'guest');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userEmail');
+            document.getElementById('alreadyLoggedCard').classList.add('hidden');
+            showMessage("आप सफलतापूर्वक लॉगआउट हो गए हैं।", false);
+        }
+
+        function handleMainAction() {
+            if (currentAuthMode === 'login') loginEmail();
+            else if (currentAuthMode === 'signup') signUpCustomerEmail();
+            else if (currentAuthMode === 'merchant') createNewStore();
+        }
+
+        function signInWithGoogle() {
+            showMessage("Google से कनेक्ट हो रहा है...", false);
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                setUserDataAndRedirect(result.user);
+            }).catch((error) => {
+                showMessage("Google लॉगिन में समस्या: " + error.message, true);
+            });
+        }
+
+        function loginEmail() {
+            const e = document.getElementById('email').value.trim();
+            const p = document.getElementById('password').value;
+
+            if (!e) return showMessage("कृपया अपनी ईमेल आईडी लिखें!");
+            if (!p) return showMessage("कृपया अपना पासवर्ड लिखें!");
+
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            showMessage("लॉगिन हो रहा है...", false);
+
+            auth.signInWithEmailAndPassword(e, p).then((userCredential) => {
+                setUserDataAndRedirect(userCredential.user);
+            }).catch((err) => {
+                btn.disabled = false;
+                showMessage("ईमेल या पासवर्ड गलत है!", true);
+            });
+        }
+
+        async function signUpCustomerEmail() {
+            const name = document.getElementById('custSignUpName').value.trim();
+            const e = document.getElementById('email').value.trim();
+            const p = document.getElementById('password').value;
+
+            if (!name) return showMessage("कृपया अपना नाम लिखें!");
+            if (!e) return showMessage("कृपया ईमेल आईडी लिखें!");
+            if (!p || p.length < 6) return showMessage("पासवर्ड कम से कम 6 अक्षरों का होना चाहिए!");
+
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            showMessage("आपका अकाउंट बन रहा है...", false);
+
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(e, p);
+                await cred.user.updateProfile({ displayName: name });
+                await db.collection('users').doc(cred.user.uid).set({
+                    name: name,
+                    email: e.toLowerCase(),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                setUserDataAndRedirect(cred.user, 'index.html');
+            } catch (err) {
+                btn.disabled = false;
+                showMessage(err.message, true);
+            }
+        }
+
+        async function createNewStore() {
+            const sName = document.getElementById('newStoreName').value.trim();
+            const mName = document.getElementById('newMarketName').value.trim() || 'मड़ैया बाजार';
+            const sPhone = document.getElementById('newShopPhone').value.replace(/\D/g, '').trim();
+            const e = document.getElementById('newEmail').value.trim();
+            const p = document.getElementById('newPassword').value;
+
+            if (!sName) return showMessage("कृपया अपनी दुकान का नाम लिखें!");
+            if (sPhone.length !== 10) return showMessage("कृपया 10 अंकों का सही मोबाइल नंबर लिखें!");
+            if (!e || !p || p.length < 6) return showMessage("कृपया ईमेल और कम से कम 6 अक्षर का पासवर्ड लिखें!");
+
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            showMessage("आपकी नई ऑनलाइन दुकान तैयार की जा रही है...", false);
+
+            try {
+                let user;
+                try {
+                    const cred = await auth.createUserWithEmailAndPassword(e, p);
+                    user = cred.user;
+                } catch (authErr) {
+                    if (authErr.code === 'auth/email-already-in-use') {
+                        const cred = await auth.signInWithEmailAndPassword(e, p);
+                        user = cred.user;
+                    } else {
+                        throw authErr;
+                    }
+                }
+
+                const newShopId = 'store_' + Date.now();
+                const cleanEmail = user.email.toLowerCase();
+
+                await db.collection('userRoles').doc(cleanEmail).set({
+                    email: cleanEmail,
+                    role: 'admin',
+                    shopId: newShopId,
+                    storeName: sName,
+                    marketName: mName,
+                    shopPhone: sPhone,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                await db.collection('stores').doc(newShopId).collection('settings').doc('store_info').set({
+                    shopId: newShopId,
+                    shopName: sName,
+                    marketName: mName,
+                    shopPhone: sPhone,
+                    upiId: `${sPhone}@ybl`,
+                    tagline: `${mName} की भरोसेमंद दुकान`,
+                    themeColor: "#1200b8",
+                    highlightColor: "#ffe500",
+                    logo: "logo.png",
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                localStorage.setItem('activeShopId', newShopId);
+                localStorage.setItem('userRole', 'admin');
+                setUserDataAndRedirect(user, 'account.html');
+            } catch (error) {
+                btn.disabled = false;
+                showMessage(error.message, true);
+            }
+        }
+
+        function forgotPassword() {
+            const e = document.getElementById('email').value.trim();
+            if (!e) return showMessage("पासवर्ड रीसेट लिंक पाने के लिए पहले ऊपर अपनी ईमेल आईडी लिखें!");
+            auth.sendPasswordResetEmail(e).then(() => {
+                showMessage("✓ पासवर्ड बदलने का लिंक आपके ईमेल पर भेज दिया गया है!", false);
+            }).catch((error) => {
+                showMessage(error.message, true);
+            });
+        }
+    </script>
+
+    <!-- Unified Bottom Bar & Floating Hamburger Menu -->
+    <script src="menu.js"></script>
 </body>
 </html>
